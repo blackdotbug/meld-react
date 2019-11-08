@@ -8,7 +8,6 @@
 
 .App-header {
   background-color: #282c34;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -20,3 +19,35 @@
 .App-link {
   color: #09d3ac;
 }
+
+#graph {
+  width: 99vmin;
+  margin: 5vmin auto;
+}
+
+svg {
+  overflow: visible;
+}
+
+.axis {
+  font: 14px sans-serif;
+}
+  
+.line {
+  fill: none;
+  stroke: orange;
+  stroke-width: 2px;
+}
+
+.tooltip {
+    position: absolute;
+    width: auto;
+    height: 13em;
+    padding: 1em;
+    font: 12px sans-serif;
+    text-align: center;
+    color: #222;
+    background: rgb(194, 194, 194);
+    border: 0;
+    border-radius: 10px;
+  }
