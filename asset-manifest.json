@@ -1,0 +1,21 @@
+{
+  "files": {
+    "main.css": "/meld-react/static/css/main.53364a4e.chunk.css",
+    "main.js": "/meld-react/static/js/main.a8a6f393.chunk.js",
+    "main.js.map": "/meld-react/static/js/main.a8a6f393.chunk.js.map",
+    "runtime-main.js": "/meld-react/static/js/runtime-main.c15e4ee8.js",
+    "runtime-main.js.map": "/meld-react/static/js/runtime-main.c15e4ee8.js.map",
+    "static/js/2.05e9ffbc.chunk.js": "/meld-react/static/js/2.05e9ffbc.chunk.js",
+    "static/js/2.05e9ffbc.chunk.js.map": "/meld-react/static/js/2.05e9ffbc.chunk.js.map",
+    "index.html": "/meld-react/index.html",
+    "precache-manifest.2e1cb8bc11fafa9487e55230ae13120b.js": "/meld-react/precache-manifest.2e1cb8bc11fafa9487e55230ae13120b.js",
+    "service-worker.js": "/meld-react/service-worker.js",
+    "static/css/main.53364a4e.chunk.css.map": "/meld-react/static/css/main.53364a4e.chunk.css.map"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.c15e4ee8.js",
+    "static/js/2.05e9ffbc.chunk.js",
+    "static/css/main.53364a4e.chunk.css",
+    "static/js/main.a8a6f393.chunk.js"
+  ]
+}
