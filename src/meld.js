@@ -44,13 +44,15 @@ class MELDChart extends Component {
         Tabletop.init({
           key: '1nA16yuLtUrdpZFpPzz-HUm-WlpPW2axHhidMOnC1TTQ',
           callback: googleData => {
+            let meld = googleData["Sheet2"].elements;
+            let wbc = googleData["Sheet3"].elements;
             this.setState({
-                data: googleData,
+                data: [meld, wbc],
                 width: this.getWidth(),
                 height: this.getWidth()/2
             }, ()=>{this.createGraph()});
           },
-          simpleSheet: true
+          simpleSheet: false
         })
         let resizedFn;
         window.addEventListener("resize", () => {
@@ -116,10 +118,9 @@ class MELDChart extends Component {
             // If MELD(i) > 11, perform additional MELD calculation as follows:
             // MELD = MELD(i) + 1.32 × (137 – Na) –  [ 0.033 × MELD(i) × (137 – Na) ]
 
-            console.log(this.state.data);
-
             // var dates = JSON.parse(data);
-            var dates = this.state.data;
+            var dates = this.state.data[0];
+            var wbc = this.state.data[1];
 
             dates.forEach(function(d) {
                 d.date = parseTime(d['Date']);
@@ -127,6 +128,11 @@ class MELDChart extends Component {
                 d.creatinine = +d['Creatinine0.60 - 1.30 mg/dL'];
                 d.sodium = +d['Na135 - 144 mmol/L'];
                 d.inr = +d['INR 0.9 - 1.1'];
+            });
+
+            wbc.forEach(function(d) {
+                d.date = parseTime(d['Date']);
+                d.wbc = +d['WBC Count (3.8 - 10.8 Thousand/uL)'];
             });
 
             // version 3
@@ -185,45 +191,139 @@ class MELDChart extends Component {
             //     else {d.meld2 = 0;}
             // });
 
+            var extDates = d3.extent(dates, d => d.date);
+            var extWBC = d3.extent(wbc, d => d.date);
+            var extent = [d3.min([extDates[0], extWBC[0]]), d3.max([extDates[1], extWBC[1]])];
 
             var xTimeScale = d3.scaleTime()
                 .range([0, chartWidth])
-                .domain(d3.extent(dates, d => d.date));
+                .domain(extent);
+
+            var xTimeScale2 = d3.scaleTime()
+                .range([0, chartWidth])
+                .domain(extent);
+
+            var maxDates = d3.max(dates, d=>d.meld2);
+            var maxWBC = d3.max(wbc, d=>d.wbc);
 
             var yLinearScale = d3.scaleLinear()
                 .range([chartHeight, 0])
-                .domain([0, d3.max(dates, d => d.meld2)]);
+                .domain([0, d3.max([maxDates, maxWBC])]);
                 
             var bottomAxis = d3.axisBottom(xTimeScale);
+            var brushAxis = d3.axisBottom(xTimeScale2);
             var leftAxis = d3.axisLeft(yLinearScale);
+
+            // chartGroup.append("rect")
+            //     .attr("width", chartWidth)
+            //     .attr("height", chartHeight)                                    
+            //     .attr("x", 0) 
+            //     .attr("y", 0)
+            //     .attr("id", "mouse-tracker")
+            //     .style("fill", "white");
             
+            var context = chartGroup.append("g") // Brushing context box container
+                .attr("transform", "translate(" + 0 + "," + (chartHeight + 30) + ")")
+                .attr("class", "context");
+
+            var brush = d3.brushX()//for slider bar at the bottom
+                .extent([[xTimeScale.range()[0], 0], [xTimeScale.range()[1], chartHeight/4]]) 
+                .on("brush end", brushed);
+            
+            var zoom = d3.zoom()
+                .scaleExtent([1, Infinity])
+                .translateExtent([[0, 0], [chartWidth, chartHeight]])
+                .extent([[0, 0], [chartWidth, chartHeight]])
+                .on("zoom", zoomed);
+            
+            var clip = chartGroup.append("defs").append("svg:clipPath")
+                .attr("id", "clip")
+                .append("svg:rect")
+                .attr("width", chartWidth)
+                .attr("height", chartHeight)
+                .attr("x", 0)
+                .attr("y", 0);
+            
+            var Line_chart = chartGroup.append("g")
+                .attr("class", "focus")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+                .attr("clip-path", "url(#clip)");
+        
+            var focus = svg.append("g")
+                .attr("class", "focus")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            context.append("g") // Create brushing xAxis
+                .attr("class", "x axis1")
+                .attr("transform", "translate(0," + chartHeight/4 + ")")
+                .call(brushAxis);
+            
+            // var contextArea = d3.area() // Set attributes for area chart in brushing context graph
+            //     .curve(d3.curveMonotoneX)
+            //     .x(function(d) { return xTimeScale2(d.date); }) // x is scaled to xScale2
+            //     .y0(20) // Bottom line begins at height2 (area chart not inverted) 
+            //     .y1(0); // Top line of area, 0 (area chart not inverted)
+            
+            //plot the rect as the bar at the bottom
+            // context.append("path") // Path is created using area details
+            //     .attr("class", "area")
+            //     .attr("d", contextArea(dates)) // pass first categories data .values to area path generator 
+            //     .attr("fill", "#F1F1F2");
+                
+            //append the brush for the selection of subsection  
+            
+            chartGroup.append("rect")
+                .attr("class", "zoom")
+                .attr("width", chartWidth)
+                .attr("height", chartHeight)
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+                .call(zoom);
+            
+            context.append("g")
+                .attr("class", "x brush")
+                .call(brush)
+                .call(brush.move, xTimeScale.range())
+                .selectAll("rect")
+                .attr("height", chartHeight/4) // Make brush rects same height 
+                .attr("fill", "#E6E7E8");  
+
             var drawLine = d3
                 .line()
                 .defined(d => d.meld2 > 0)
                 .x(d => xTimeScale(d.date))
                 .y(d => yLinearScale(d.meld2));
+
+            var wbcLine = d3
+                .line()
+                .x(d => xTimeScale(d.date))
+                .y(d => yLinearScale(d.wbc));
+
+            Line_chart.append("path")
+                .datum(wbc)
+                .classed("line wbc", true)
+                .attr("d", wbcLine);
             
-            chartGroup.append("path")
+            Line_chart.append("path")
                 .datum(dates.filter(drawLine.defined()))
                 .attr("d", drawLine)
                 .style("stroke-dasharray", ("3, 3"))
-                .classed("line", true);
+                .classed("line meld2", true);
             
-            chartGroup.append("path")
+            Line_chart.append("path")
                 .datum(dates)
-                .classed("line", true)
+                .classed("line meld", true)
                 .attr("d", drawLine);
             
-            chartGroup.append("g")
-                .classed("axis", true)
+            focus.append("g")
+                .classed("y axis", true)
                 .call(leftAxis);
             
-            chartGroup.append("g")
-                .classed("axis", true)
+            focus.append("g")
+                .classed("x axis", true)
                 .attr("transform", "translate(0, " + chartHeight + ")")
                 .call(bottomAxis);
 
-            var circlesGroup = chartGroup.selectAll("circle")
+            var circlesGroup = Line_chart.selectAll("circle")
                 .data(dates.filter(drawLine.defined()))
                 .enter()
                 .append("circle")
@@ -250,6 +350,31 @@ class MELDChart extends Component {
                     toolTip.hide(d);
                 });
             
+            function brushed() {
+                if (d3.event.sourceEvent && d3.event.sourceEvent.type === "zoom") return; // ignore brush-by-zoom
+                var s = d3.event.selection || xTimeScale2.range();
+                xTimeScale.domain(s.map(xTimeScale2.invert, xTimeScale2));
+                Line_chart.select(".meld").attr("d", drawLine);
+                Line_chart.select(".meld2").attr("d", drawLine);
+                Line_chart.select(".wbc").attr("d", wbcLine);
+                Line_chart.selectAll("circle").attr("cx", d => xTimeScale(d.date)).attr("cy", d => yLinearScale(d.meld2));
+                focus.select(".axis.x").call(bottomAxis);
+                chartGroup.select(".zoom").call(zoom.transform, d3.zoomIdentity
+                    .scale(chartWidth / (s[1] - s[0]))
+                    .translate(-s[0], 0));
+            };      
+
+            function zoomed() {
+                if (d3.event.sourceEvent && d3.event.sourceEvent.type === "brush") return; // ignore zoom-by-brush
+                var t = d3.event.transform;
+                xTimeScale.domain(t.rescaleX(xTimeScale2).domain());
+                Line_chart.select(".meld").attr("d", drawLine);
+                Line_chart.select(".meld2").attr("d", drawLine);
+                Line_chart.select(".wbc").attr("d", wbcLine);
+                Line_chart.selectAll("circle").attr("cx", d => xTimeScale(d.date)).attr("cy", d => yLinearScale(d.meld2));
+                focus.select(".axis.x").call(bottomAxis);
+                context.select(".brush").call(brush.move, xTimeScale.range().map(t.invertX, t));
+            };
             // }).catch(function(error) {
             // console.log(error);          
         // });

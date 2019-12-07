@@ -16,6 +16,10 @@
   color: white;
 }
 
+.App-footer {
+  height: 10vmin;
+}
+
 .App-link {
   color: #09d3ac;
 }
@@ -23,6 +27,7 @@
 #graph {
   width: 99vmin;
   margin: 5vmin auto;
+  min-height: calc(70vh - 8vmin);
 }
 
 svg {
@@ -39,6 +44,15 @@ svg {
   stroke-width: 2px;
 }
 
+.wbc {
+  stroke: rgb(94, 94, 94);
+}
+
+#mouse-tracker {
+  stroke: #E6E7E8;
+  stroke-width: 1px;
+}
+
 .tooltip {
     position: absolute;
     width: auto;
@@ -50,4 +64,13 @@ svg {
     background: rgb(194, 194, 194);
     border: 0;
     border-radius: 10px;
+  }
+
+  .zoom {
+    cursor: move;
+    fill: none;
+  }
+
+  .handle {
+    fill: rgb(49, 49, 49);
   }
